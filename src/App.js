@@ -1,6 +1,6 @@
 import './App.css';
 import {useEffect, useState} from 'react';
-import { Line } from 'react-chartjs-2';
+import { Line, Scatter } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -13,6 +13,7 @@ import {
 } from 'chart.js';
 ChartJS.register(CategoryScale, LinearScale, LineElement, PointElement, Tooltip, Legend, Title);
 
+const R_STEP = 0.01;
 const options = {
   scales: {
     y: {
@@ -23,19 +24,28 @@ const options = {
   }
 };
 function App() {
-	const [R, setR] = useState(0);
+	const [R, setR] = useState(1);
 	const [initx, setInitx] = useState(0.5);
-	const [data, setData] = useState({
+	const [seq, setSeq] = useState({
 		datasets: [
 			{
-				label: 'Scatter Dataset',
+				label: 'Line Dataset',
 				data: [{x:1, y:2}, {x:2, y:3}, {x:3, y:1}],
 				backgroundColor: 'rgba(75,192,192,1)',
 			},
 		],
 	});
+	const [data, setData] = useState({
+		datasets: [
+			{
+				label: 'Tail Dataset',
+				data: [],
+				backgroundColor: 'rgba(255,99,132,1)',
+			}
+		],
+	});
 	useEffect(() => {
-		compute(R, initx, setData);
+		compute(R, initx, data, setSeq, setData);
 	}, [R, initx]);
 	return (
 	<div className="App">
@@ -47,7 +57,7 @@ function App() {
 			<label htmlFor="slider">R: {R.toFixed(2)}</label>
 			<input
 				id="slider" type="range"
-				min="0" max="4" step="0.05"
+				min="1" max="4" step={R_STEP}
 				value={R}
 				onChange={e => {
 					const newR = Number(e.target.value);
@@ -68,24 +78,33 @@ function App() {
 				style={{ width: '300px', marginLeft: '10px' }}
 			/>
 		</div>
-		<Line data={data} options={options}/>
+		<div style={{ display: 'flex', justifyContent: 'center', alignItems: 'flex-start', gap: '20px' }}>
+			<div style={{ width: '40%' }}>
+				<Line data={seq} options={options}/>
+			</div>
+			<div style={{ width: '60%' }}>
+				<Scatter data={data} options={{}}/>
+				<p>Num points: {data.datasets[0].data.length}</p>
+			</div>
+		</div>
 	</div>
 	);
 }
 
 
 
-function compute(r, start, setter){
+function compute(r, start, data, setterSeq, setterData){
 	// alert(`compute called with r = ${r}`);
+	const N = 150;
 	var nums = [start];
-	for (let i = 1; i < 50; i++) {
+	for (let i = 1; i < N; i++) {
 		nums.push(r * nums[i-1] * (1 - nums[i-1]));
 	}
-	// var newData = [];
-	// for (let i = 0; i < nums.length; i++) {
-	// 	newData.push({x: i, y: nums[i]});
-	// }
-	setter({
+	var points = data.datasets[0].data;
+	for(let i = N-10; i < N; i++){
+		points.push({x: r, y: nums[i]});
+	}
+	setterSeq({
 		labels: [...Array(nums.length).keys()],
 		datasets: [
 			{
@@ -93,6 +112,15 @@ function compute(r, start, setter){
 				data: nums,
 				backgroundColor: 'rgba(75,192,192,1)',
 			},
+		],
+	});
+	setterData({
+		datasets: [
+			{
+				label: 'Tail Dataset',
+				data: points,
+				backgroundColor: 'rgba(255,99,132,1)',
+			}
 		],
 	});
 	return nums;
