@@ -1,0 +1,10 @@
+.grid-cell {
+    width: 10px;
+    height: 10px;
+    margin: 0;
+    padding: 0;
+    border: none;
+}
+table, tr{
+    border: none;
+}
