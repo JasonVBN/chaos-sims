@@ -1,8 +1,8 @@
 import {useEffect, useState} from 'react';
 import '../Fire.css';
 
-const ROWS = 30;
-const COLS = 30;
+const ROWS = 50;
+const COLS = 50;
 const COLORS = {
     '.': '#ccc',
     't': '#0c0',
@@ -22,6 +22,7 @@ function Fire(){
         Array.from({length:ROWS}, (_,r)=>Array.from({length:COLS}, (_,c)=>'.'))
     );
     const [running, setRunning] = useState(false);
+    const [treesRate, setTreesRate] = useState(1);
     //for debugging:
     // useEffect(() => {
     //     console.log("grid changed:");
@@ -72,6 +73,9 @@ function Fire(){
                             console.log(`tree (${r},${c}) has fire neighbor, now burning :D`);
                         }
                     }
+                    else if(oldgrid[r][c] == 'f'){
+                        newgrid[r][c] = '.';
+                    }
                 }
             }
             // console.log("newgrid after prop:"); printGrid(newgrid);
@@ -80,7 +84,7 @@ function Fire(){
         });
     }
     function step(){
-        growTrees(1);
+        growTrees(treesRate);
         if(Math.random() < 0.1){ //10% of lightning strike
             lightning();
         }
@@ -93,12 +97,19 @@ function Fire(){
                 step();
                 iter++;
             }
-        }, 10);
+        }, 1000);
         return () => clearInterval(ival);
     }, [running]);
 
     return (
         <>
+        <label>Trees growth rate: {treesRate}</label>
+        <input 
+            type="range"
+            min='0'
+            max='50'
+            value={treesRate}
+            onChange={(ev) => {setTreesRate(ev.target.value);}} />
         <table>
             <tbody>
             {grid.map(row => (
