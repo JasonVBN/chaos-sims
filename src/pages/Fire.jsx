@@ -1,8 +1,8 @@
 import {useEffect, useState} from 'react';
 import '../Fire.css';
 
-const ROWS = 5;
-const COLS = 5;
+const ROWS = 30;
+const COLS = 30;
 const COLORS = {
     '.': '#ccc',
     't': '#0c0',
@@ -22,54 +22,62 @@ function Fire(){
         Array.from({length:ROWS}, (_,r)=>Array.from({length:COLS}, (_,c)=>'.'))
     );
     const [running, setRunning] = useState(false);
-    useEffect(() => {
-        console.log("grid changed:");
-        printGrid(grid);
-    }, [grid]);
+    //for debugging:
+    // useEffect(() => {
+    //     console.log("grid changed:");
+    //     printGrid(grid);
+    // }, [grid]);
     function growTrees(numTrees){
         for(var i=0; i<numTrees; i++){
             var r = Math.floor(Math.random()*ROWS);
             var c = Math.floor(Math.random()*COLS);
-            var newgrid = [...grid];
-            newgrid[r][c] = 't';
-            // mutating inner array - might be bad
-            setGrid(newgrid);
+            setGrid(oldgrid => {
+                var newgrid = [...oldgrid];
+                // newgrid[r] = [...oldgrid[r]]; //deep copy
+                newgrid[r][c] = 't';
+                // mutating inner array - might be bad
+                return newgrid;
+            });
             console.log(`placed tree at (${r},${c})`);
         }
     }
     function lightning(){
         var r = Math.floor(Math.random()*ROWS);
         var c = Math.floor(Math.random()*COLS);
-        var newgrid = [...grid];
-        newgrid[r][c] = 'f';
-        // mutating inner array - might be bad
-        setGrid(newgrid);
+        setGrid(oldgrid => {
+            var newgrid = [...oldgrid];
+            newgrid[r] = [...oldgrid[r]]; //deep copy
+            newgrid[r][c] = 'f';
+            return newgrid;
+        });
         console.log(`lightning strike at (${r},${c})`);
     }
     function propagateFire(){
         console.log("spreading fire");
-        console.log("before:"); printGrid(grid);
-        var newgrid = [...grid];
-        for(var r=0; r<ROWS; r++){
-            newgrid[r] = [...grid[r]]; //deep copy
-            console.log(newgrid[r]);
-            for(var c=0; c<COLS; c++){
-                if(grid[r][c] == 't'){
-                    //check neighbors
-                    if((r-1>=0 && grid[r-1][c]=='f') || 
-                        (r+1<ROWS && grid[r+1][c]=='f') || 
-                        (c-1>=0 && grid[r][c-1]=='f') || 
-                        (c+1<COLS && grid[r][c+1]=='f')
-                        ){
-                        newgrid[r][c] = 'f';
-                        console.log(`tree (${r},${c}) has fire neighbor, now burning :D`);
+        setGrid((oldgrid) => {
+            // console.log("before:"); printGrid(oldgrid);
+            var newgrid = [...oldgrid];
+            for(var r=0; r<ROWS; r++){
+                newgrid[r] = [...oldgrid[r]]; //deep copy
+                // console.log(newgrid[r]);
+                for(var c=0; c<COLS; c++){
+                    if(oldgrid[r][c] == 't'){
+                        //check neighbors
+                        if((r-1>=0 && oldgrid[r-1][c]=='f') || 
+                            (r+1<ROWS && oldgrid[r+1][c]=='f') || 
+                            (c-1>=0 && oldgrid[r][c-1]=='f') || 
+                            (c+1<COLS && oldgrid[r][c+1]=='f')
+                            ){
+                            newgrid[r][c] = 'f';
+                            console.log(`tree (${r},${c}) has fire neighbor, now burning :D`);
+                        }
                     }
                 }
             }
-        }
-        console.log("newgrid after prop:"); printGrid(newgrid);
-        console.log("grid before committing:"); printGrid(grid);
-        setGrid(newgrid);
+            // console.log("newgrid after prop:"); printGrid(newgrid);
+            // console.log("oldgrid before committing:"); printGrid(oldgrid);
+            return newgrid;
+        });
     }
     function step(){
         growTrees(1);
@@ -80,12 +88,14 @@ function Fire(){
     }
     useEffect(() => {
         const ival = setInterval(() => {
-            console.log(`iteration ${iter}`);
-            step();
-            iter++;
-        }, 1000);
+            if(running){
+                console.log(`iteration ${iter}`);
+                step();
+                iter++;
+            }
+        }, 10);
         return () => clearInterval(ival);
-    }, []);
+    }, [running]);
 
     return (
         <>

@@ -7,6 +7,8 @@ function Home(){
             <Link to="/chaos">Chaos</Link>
             <br/>
             <Link to="/fire">Fire simulation</Link>
+            <br/>
+            <Link to="/sandbox">Sandbox</Link>
     </>
     );
 }
