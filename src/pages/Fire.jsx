@@ -1,4 +1,4 @@
-import {useEffect, useState} from 'react';
+import {useEffect, useState, useRef} from 'react';
 import '../Fire.css';
 
 const ROWS = 50;
@@ -17,30 +17,34 @@ function printGrid(grid){
 }
 
 function Fire(){
-    console.log("-- rendering Fire --");
+    // console.log("-- rendering Fire --");
     const [grid, setGrid] = useState(
         Array.from({length:ROWS}, (_,r)=>Array.from({length:COLS}, (_,c)=>'.'))
     );
     const [running, setRunning] = useState(false);
     const [treesRate, setTreesRate] = useState(1);
+    const [timeIval, setTimeIval] = useState(100);
+    const [lightningProb, setLightningProb] = useState(0.1);
     //for debugging:
     // useEffect(() => {
     //     console.log("grid changed:");
     //     printGrid(grid);
     // }, [grid]);
     function growTrees(numTrees){
-        for(var i=0; i<numTrees; i++){
-            var r = Math.floor(Math.random()*ROWS);
-            var c = Math.floor(Math.random()*COLS);
-            setGrid(oldgrid => {
-                var newgrid = [...oldgrid];
+        console.log(`growing ${numTrees} trees...`);
+        setGrid(oldgrid => {
+            var newgrid = [...oldgrid];
+            for(var i=0; i<numTrees; i++){
+                var r = Math.floor(Math.random()*ROWS);
+                var c = Math.floor(Math.random()*COLS);
+                
                 // newgrid[r] = [...oldgrid[r]]; //deep copy
                 newgrid[r][c] = 't';
                 // mutating inner array - might be bad
-                return newgrid;
-            });
-            console.log(`placed tree at (${r},${c})`);
-        }
+                // console.log(`placed tree ${i} at (${r},${c})`);
+            }
+            return newgrid;
+        });
     }
     function lightning(){
         var r = Math.floor(Math.random()*ROWS);
@@ -51,7 +55,7 @@ function Fire(){
             newgrid[r][c] = 'f';
             return newgrid;
         });
-        console.log(`lightning strike at (${r},${c})`);
+        console.log(`**lightning strike at (${r},${c})`);
     }
     function propagateFire(){
         console.log("spreading fire");
@@ -70,7 +74,7 @@ function Fire(){
                             (c+1<COLS && oldgrid[r][c+1]=='f')
                             ){
                             newgrid[r][c] = 'f';
-                            console.log(`tree (${r},${c}) has fire neighbor, now burning :D`);
+                            // console.log(`tree (${r},${c}) has fire neighbor, now burning :D`);
                         }
                     }
                     else if(oldgrid[r][c] == 'f'){
@@ -85,31 +89,63 @@ function Fire(){
     }
     function step(){
         growTrees(treesRate);
-        if(Math.random() < 0.1){ //10% of lightning strike
+        if(Math.random() < lightningProb){ //10% of lightning strike
             lightning();
         }
         propagateFire();
     }
     useEffect(() => {
+        console.log(`smth changed, re-making interval 
+            (running:${running}, time:${timeIval}, lightningProb:${lightningProb})`);
         const ival = setInterval(() => {
             if(running){
                 console.log(`iteration ${iter}`);
                 step();
                 iter++;
             }
-        }, 1000);
+        }, timeIval);
         return () => clearInterval(ival);
-    }, [running]);
+    }, [running, treesRate, timeIval, lightningProb]);
 
+    const timeRef = useRef(null);
     return (
         <>
-        <label>Trees growth rate: {treesRate}</label>
+        <label>Trees growth rate: </label>
         <input 
             type="range"
             min='0'
-            max='50'
+            max='100'
             value={treesRate}
             onChange={(ev) => {setTreesRate(ev.target.value);}} />
+        {treesRate}
+        <br/>
+
+        <label>Time between iters (ms): </label>
+        <input type="number"
+            min='10'
+            max='1000'
+            step='10'
+            ref={timeRef}
+            defaultValue='100'
+        />
+        <button onClick={() => {setTimeIval(timeRef.current.value);}}>
+            Apply</button>
+        <br/>
+
+        <label>Lightning probability:</label>
+        <input type="range"
+            min='0'
+            max='1'
+            step='0.01'
+            value={lightningProb}
+            onChange={(ev) => {setLightningProb(ev.target.value);}} />
+        {lightningProb}
+        <br/>
+
+        <button
+            onClick={() => { lightning(); } }>
+            Be Zeus and send a random lightning strike</button>
+
         <table>
             <tbody>
             {grid.map(row => (

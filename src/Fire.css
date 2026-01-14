@@ -8,3 +8,7 @@
 table, tr{
     border: none;
 }
+label{
+    display: inline-block;
+    width: 200px;
+}
